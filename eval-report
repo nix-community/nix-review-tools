@@ -1,9 +1,11 @@
 #!/usr/bin/env nix-shell
 
+abort "Usage: eval-report <id...>" unless ARGV[0]
+
 #
 # Given data, make a section
 #
-def table(data, name:)
+def table(data, name:, additional_columns: [])
   puts "### #{name}\n"
   puts ""
   puts " * #{data.count} issues"
@@ -12,61 +14,92 @@ def table(data, name:)
   puts "<thead><tr>"
   puts "<th>job</th>"
   puts "<th>status</th>"
-  puts "</tr></thead>"
-  data.each do |job|
-    puts "<tr>"
-    puts "<td><tt><a href='#{job[:job]}'>#{job[:name]}</a></tt></td>"
-    puts "<td>#{job[:status]}</td>"
-    puts "</tr>"
+  additional_columns.each do |col|
+    puts "<th>#{col}</th>"
   end
+  puts "</tr></thead>"
+  data
+    .sort do |a,b|
+      unless a[:status] == b[:status]
+        a[:status] <=> b[:status]
+      else
+        a[:name] <=> b[:name]
+      end
+    end
+    .each do |job|
+      puts "<tr>"
+      puts "<td><tt><a href='#{job[:job]}'>#{job[:name]}</a></tt></td>"
+      puts "<td>#{job[:status]}</td>"
+      additional_columns.each do |col|
+        puts "<th>#{job[col]}</th>"
+      end
+      puts "</tr>"
+    end
   puts "</table>"
   puts "</details>"
   puts "\n"
 end
 
-#
-# Conditionally downloads, then parses the file.
-#
+def download_and_parse(id)
+  #
+  # Conditionally downloads, then parses the file.
+  #
 
-abort "Usage: eval-report <id>" unless ARGV[0]
+  filename = id + ".html"
 
-FILE = ARGV[0] + ".html"
+  unless File.exists?(filename)
+    `curl -o "#{filename}" "https://hydra.nixos.org/eval/#{id}?full=1"`
+  end
 
-unless File.exists?(FILE)
-  `curl -o "#{FILE}" "https://hydra.nixos.org/eval/#{ARGV[0]}?full=1"`
+  File.read(filename)
+    .split(/<\/?tbody>/)
+    .select { |txt| txt.split("\n").first.match(/^\s*<tr>\s+<td>/) }
+    .join("\n")
+    .split("<tr>")[2..-1]
+    .map do |row|
+      row.split("</tr>").first
+    end
+      .map do |raw|
+      status = raw.split('title="', 2).last.split('"', 2).first
+      job_parts = raw.split('<a href="', 2).last.split('</a>', 2).first
+      job = job_parts.split('"', 2).first
+      name = job_parts.split('">', 2).last.split("</td>", 2).first
+      platform = raw.split('td class="nowrap"><tt>', 2).last.split('</tt>', 2).first
+
+      {
+        platform: platform,
+        job: job,
+        name: name,
+        status: status,
+        raw: raw,
+      }
+    end
 end
 
-contents = File.read(FILE)
-  .split(/<\/?tbody>/)
-  .select { |txt| txt.split("\n").first.match(/^\s*<tr>\s+<td>/) }
-  .join("\n")
-  .split("<tr>")[2..-1]
-  .map do |row|
-    row.split("</tr>").first
-  end
-  .map do |raw|
-    status = raw.split('title="', 2).last.split('"', 2).first
-    job_parts = raw.split('<a href="', 2).last.split('</a>', 2).first
-    job = job_parts.split('"', 2).first
-    name = job_parts.split('">', 2).last.split("</td>", 2).first
-    platform = raw.split('td class="nowrap"><tt>', 2).last.split('</tt>', 2).first
+#
+# Arguments parsing
+#
 
-    {
-      platform: platform,
-      job: job,
-      name: name,
-      status: status,
-      raw: raw,
-    }
+$ids = [];
+
+# TODO : naive arguments parsing for --refresh
+ARGV.each do |arg|
+  $ids << arg
+end
+
+#
+# Reporting
+#
+
+# Combine all evals
+evals = $ids.map do |id|
+    download_and_parse(id)
   end
+  .inject(:+)
 
 IGNORED = ["Succeeded", "Queued"]
-not_a_success = contents.reject { |job| IGNORED.include?(job[:status]) }
-queued = contents.select { |job| ["Queued"].include?(job[:status]) }
-
-#
-# Here, we have the actual markdown...
-#
+not_a_success = evals.reject { |job| IGNORED.include?(job[:status]) }
+queued = evals.select { |job| ["Queued"].include?(job[:status]) }
 
 indexed = not_a_success.reduce({}) do |hash, j|
   hash[j[:platform]] ||= []
@@ -74,11 +107,26 @@ indexed = not_a_success.reduce({}) do |hash, j|
   hash
 end
 
+#
+# Here, we have the actual markdown...
+#
+
+puts "# Evals report"
+puts ""
+puts "*Report built at #{Time.now.utc}*"
+puts ""
+puts "Built for evals:"
+puts ""
+$ids.each { |id| puts "  * [#{id}](https://hydra.nixos.org/eval/#{id})" }
+puts ""
+puts " * * * "
+puts ""
+
 indexed.each do |p, jobs|
   table(jobs, name: p)
 end
 
-table(queued, name: "Still queued")
+table(queued, name: "Still queued", additional_columns: [:platform]) if queued.length > 0
 
 #!nix-shell -p curl -p ruby -i ruby
 # vim: set ft=ruby:
