@@ -2,6 +2,13 @@
 
 abort "Usage: eval-report <id...>" unless ARGV[0]
 
+ORDER = [
+  "i686-linux",
+  "x86_64-linux",
+  "x86_64-darwin",
+  "aarch64-linux",
+]
+
 #
 # Given data, make a section
 #
@@ -122,8 +129,9 @@ puts ""
 puts " * * * "
 puts ""
 
-indexed.each do |p, jobs|
-  table(jobs, name: p)
+ORDER.each do |platform|
+  jobs = indexed[platform]
+  table(jobs, name: platform) if jobs
 end
 
 table(queued, name: "Still queued", additional_columns: [:platform]) if queued.length > 0
