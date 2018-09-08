@@ -22,4 +22,12 @@ module Hydra::Fetch
       "eval_#{id}"
     )
   end
+
+  # Gets the full build data from hydra.
+  def self.build(id)
+    _get(
+      "https://hydra.nixos.org/build/#{id}",
+      "build_#{id}"
+    )
+  end
 end

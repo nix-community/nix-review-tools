@@ -8,5 +8,7 @@ module Hydra
   ]
 end
 
+require "nokogiri"
+require File.join(__dir__(), "hydra/build")
 require File.join(__dir__(), "hydra/eval")
 require File.join(__dir__(), "hydra/fetch")
