@@ -7,18 +7,19 @@ module Report::Eval
   # Given data, make a section
   #
   def self.table(data, name:, additional_columns: [])
-    puts "### #{name}\n"
-    puts ""
-    puts " * #{data.count} issues"
-    puts "<details><summary>Failure table</summary>"
-    puts "<table>"
-    puts "<thead><tr>"
-    puts "<th>job</th>"
-    puts "<th>status</th>"
+    acc = []
+    acc << "### #{name}\n"
+    acc << ""
+    acc << " * #{data.count} issues"
+    acc << "<details><summary>Failure table</summary>"
+    acc << "<table>"
+    acc << "<thead><tr>"
+    acc << "<th>job</th>"
+    acc << "<th>status</th>"
     additional_columns.each do |col|
-      puts "<th>#{col}</th>"
+      acc << "<th>#{col}</th>"
     end
-    puts "</tr></thead>"
+    acc << "</tr></thead>"
     data
       .sort do |a,b|
       unless a[:status] == b[:status]
@@ -28,20 +29,23 @@ module Report::Eval
       end
     end
       .each do |job|
-        puts "<tr>"
-        puts "<td><tt><a href='#{job[:job]}'>#{job[:name]}</a></tt></td>"
-        puts "<td>#{job[:status]}</td>"
+        acc << "<tr>"
+        acc << "<td><tt><a href='#{job[:job]}'>#{job[:name]}</a></tt></td>"
+        acc << "<td>#{job[:status]}</td>"
         additional_columns.each do |col|
-          puts "<th>#{job[col]}</th>"
+          acc << "<th>#{job[col]}</th>"
         end
-        puts "</tr>"
+        acc << "</tr>"
       end
-    puts "</table>"
-    puts "</details>"
-    puts "\n"
+    acc << "</table>"
+    acc << "</details>"
+    acc << "\n"
+
+    return acc
   end
 
   def self.report(in_evals)
+    acc = []
     ids = in_evals.keys
 
     # Combine evals
@@ -60,22 +64,24 @@ module Report::Eval
     # Here, we have the actual markdown...
     #
 
-    puts "# Evals report"
-    puts ""
-    puts "*Report built at #{Time.now.utc}*"
-    puts ""
-    puts "Built for evals:"
-    puts ""
-    ids.each { |id| puts "  * [#{id}](https://hydra.nixos.org/eval/#{id})" }
-    puts ""
-    puts " * * * "
-    puts ""
+    acc << "# Evals report"
+    acc << ""
+    acc << "*Report built at #{Time.now.utc}*"
+    acc << ""
+    acc << "Built for evals:"
+    acc << ""
+    ids.each { |id| acc << "  * [#{id}](https://hydra.nixos.org/eval/#{id})" }
+    acc << ""
+    acc << " * * * "
+    acc << ""
 
     Hydra::KNOWN_PLATFORMS.each do |platform|
       jobs = indexed[platform]
-      table(jobs, name: platform) if jobs
+      acc.concat table(jobs, name: platform) if jobs
     end
 
-    table(queued, name: "Still queued", additional_columns: [:platform]) if queued.length > 0
+    acc.concat table(queued, name: "Still queued", additional_columns: [:platform]) if queued.length > 0
+
+    acc.join("\n")
   end
 end

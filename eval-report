@@ -15,7 +15,7 @@ end
 # Combine all evals
 evals = ids.map { |id| [id, Hydra::Eval.get(id)] }.to_h
 
-Report::Eval.report(evals)
+puts Report::Eval.report(evals)
 
 #!nix-shell -p curl -p ruby -i ruby
 # vim: set ft=ruby:
