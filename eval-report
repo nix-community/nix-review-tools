@@ -1,140 +1,21 @@
 #!/usr/bin/env nix-shell
 
+require File.join(__dir__(), "lib/hydra")
+require File.join(__dir__(), "lib/report")
+
 abort "Usage: eval-report <id...>" unless ARGV[0]
 
-ORDER = [
-  "i686-linux",
-  "x86_64-linux",
-  "x86_64-darwin",
-  "aarch64-linux",
-]
+ids = [];
 
-#
-# Given data, make a section
-#
-def table(data, name:, additional_columns: [])
-  puts "### #{name}\n"
-  puts ""
-  puts " * #{data.count} issues"
-  puts "<details><summary>Failure table</summary>"
-  puts "<table>"
-  puts "<thead><tr>"
-  puts "<th>job</th>"
-  puts "<th>status</th>"
-  additional_columns.each do |col|
-    puts "<th>#{col}</th>"
-  end
-  puts "</tr></thead>"
-  data
-    .sort do |a,b|
-      unless a[:status] == b[:status]
-        a[:status] <=> b[:status]
-      else
-        a[:name] <=> b[:name]
-      end
-    end
-    .each do |job|
-      puts "<tr>"
-      puts "<td><tt><a href='#{job[:job]}'>#{job[:name]}</a></tt></td>"
-      puts "<td>#{job[:status]}</td>"
-      additional_columns.each do |col|
-        puts "<th>#{job[col]}</th>"
-      end
-      puts "</tr>"
-    end
-  puts "</table>"
-  puts "</details>"
-  puts "\n"
-end
-
-def download_and_parse(id)
-  #
-  # Conditionally downloads, then parses the file.
-  #
-
-  filename = id + ".html"
-
-  unless File.exists?(filename)
-    `curl -o "#{filename}" "https://hydra.nixos.org/eval/#{id}?full=1"`
-  end
-
-  File.read(filename)
-    .split(/<\/?tbody>/)
-    .select { |txt| txt.split("\n").first.match(/^\s*<tr>\s+<td>/) }
-    .join("\n")
-    .split("<tr>")[2..-1]
-    .map do |row|
-      row.split("</tr>").first
-    end
-      .map do |raw|
-      status = raw.split('title="', 2).last.split('"', 2).first
-      job_parts = raw.split('<a href="', 2).last.split('</a>', 2).first
-      job = job_parts.split('"', 2).first
-      name = job_parts.split('">', 2).last.split("</td>", 2).first
-      platform = raw.split('td class="nowrap"><tt>', 2).last.split('</tt>', 2).first
-
-      {
-        platform: platform,
-        job: job,
-        name: name,
-        status: status,
-        raw: raw,
-      }
-    end
-end
-
-#
-# Arguments parsing
-#
-
-$ids = [];
-
-# TODO : naive arguments parsing for --refresh
+# TODO : arguments parsing...
 ARGV.each do |arg|
-  $ids << arg
+  ids << arg
 end
-
-#
-# Reporting
-#
 
 # Combine all evals
-evals = $ids.map do |id|
-    download_and_parse(id)
-  end
-  .inject(:+)
+evals = ids.map { |id| [id, Hydra::Eval.get(id)] }.to_h
 
-IGNORED = ["Succeeded", "Queued"]
-not_a_success = evals.reject { |job| IGNORED.include?(job[:status]) }
-queued = evals.select { |job| ["Queued"].include?(job[:status]) }
-
-indexed = not_a_success.reduce({}) do |hash, j|
-  hash[j[:platform]] ||= []
-  hash[j[:platform]] << j
-  hash
-end
-
-#
-# Here, we have the actual markdown...
-#
-
-puts "# Evals report"
-puts ""
-puts "*Report built at #{Time.now.utc}*"
-puts ""
-puts "Built for evals:"
-puts ""
-$ids.each { |id| puts "  * [#{id}](https://hydra.nixos.org/eval/#{id})" }
-puts ""
-puts " * * * "
-puts ""
-
-ORDER.each do |platform|
-  jobs = indexed[platform]
-  table(jobs, name: platform) if jobs
-end
-
-table(queued, name: "Still queued", additional_columns: [:platform]) if queued.length > 0
+Report::Eval.report(evals)
 
 #!nix-shell -p curl -p ruby -i ruby
 # vim: set ft=ruby:
