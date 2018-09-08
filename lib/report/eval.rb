@@ -3,6 +3,21 @@ module Report::Eval
   # Ignored for the main report.
   IGNORED = ["Succeeded", "Queued"]
 
+  # Given a list of paths, reduces to one "thing".
+  # This is dirty and should probably sanitize more.
+  # This assumes all paths are related (multiple outputs)
+  def self.reduce_paths(paths)
+    paths = paths
+      .map { |p| p.split("-", 2).last }
+      .sort
+      .first
+    [
+      "<tt>",
+      paths,
+      "</tt>",
+    ].join("")
+  end
+
   #
   # Given data, make a section
   #
@@ -30,7 +45,27 @@ module Report::Eval
     end
       .each do |job|
         acc << "<tr>"
-        acc << "<td><tt><a href='#{job[:job]}'>#{job[:name]}</a></tt></td>"
+        # job
+        acc << "<td>"
+        acc << "<tt><a href='#{job[:build_url]}'>#{job[:name]}</a></tt>"
+        if job[:status] == "Dependency failed" and job[:build_details] then
+          acc << "<ul>"
+          job[:build_details][:failed_steps].each do |details|
+            acc << "<li>"
+            acc << [
+              "<b>=> #{details[:status][:type]}</b>",
+              reduce_paths(details[:what]),
+              "<br />",
+              details[:status][:links].map do |link|
+                "<a href='#{link[:url]}'>#{link[:text]}</a>"
+              end.join(", "),
+            ].join(" ")
+            acc << "</li>"
+          end
+          acc << "<ul>"
+        end
+        acc << "</td>"
+
         acc << "<td>#{job[:status]}</td>"
         additional_columns.each do |col|
           acc << "<th>#{job[col]}</th>"
@@ -44,6 +79,7 @@ module Report::Eval
     return acc
   end
 
+  # Returns a formatted markdown report for the given eval.
   def self.report(in_evals)
     acc = []
     ids = in_evals.keys

@@ -13,7 +13,7 @@ ARGV.each do |arg|
 end
 
 # Combine all evals
-evals = ids.map { |id| [id, Hydra::Eval.get(id)] }.to_h
+evals = ids.map { |id| [id, Hydra::Eval.get(id, with_build_details: true)] }.to_h
 
 puts Report::Eval.report(evals)
 
