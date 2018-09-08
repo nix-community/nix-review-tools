@@ -9,3 +9,4 @@ module Hydra
 end
 
 require File.join(__dir__(), "hydra/eval")
+require File.join(__dir__(), "hydra/fetch")
