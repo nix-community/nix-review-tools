@@ -18,6 +18,80 @@ module Report::Eval
     ].join("")
   end
 
+  def self.failure_propagation(evals)
+    acc = []
+    acc << "## Problematic dependencies"
+    acc << ""
+    acc << "<table>"
+    acc << "<tr>"
+    acc << "<th>name</th><th>count</th>"
+    acc << "</tr>"
+
+    all_builds = evals.values.flatten
+    dependency_failures = all_builds.select { |b| b[:status] == "Dependency failed" }
+    failed_steps = dependency_failures.map do |b|
+      platform = b[:platform]
+
+      b[:build_details][:failed_steps]
+        .map do |step|
+          build_id = 
+            if step[:status][:type] == "Aborted" then
+              "Aborted"
+            else
+              step[:status][:links]
+                .first[:url]
+                .split("/build/", 2).last
+                .split("/", 2).first
+            end
+
+          {
+            build_id: build_id,
+            platform: platform,
+            step: step,
+            propagates_to: b
+          }
+        end
+    end
+      .flatten
+
+    acc.concat(
+      failed_steps.group_by do |step|
+        self.reduce_paths(step[:step][:what])
+      end.map do |id, failures|
+        md = []
+        step = failures.first[:step]
+        platform = failures.first[:platform]
+        propagates_to = failures.first[:propagates_to]
+        path = reduce_paths(step[:what])
+        md << "<tr>"
+        md << "<td>"
+        md << "<details><summary>#{platform} #{path}</summary>"
+        md << "<ul>"
+        md.concat (failures.map do |failure|
+          propagates_to = failure[:propagates_to]
+            "<li>#{propagates_to[:name]}</li>"
+          end
+          .uniq)
+        md << "</ul>"
+        md << "</details>"
+        md << "</td>"
+        md << "<td>#{failures.count}</td>"
+        md << "</tr>"
+
+        [failures.count, md]
+      end
+      .sort do |a, b|
+        b.first <=> a.first
+      end
+      .map { |item| item.last }
+      .flatten
+    )
+
+    acc << "</table>"
+
+    return acc.join("\n")
+  end
+
   #
   # Given data, make a section
   #
@@ -47,7 +121,13 @@ module Report::Eval
         acc << "<tr>"
         # job
         acc << "<td>"
+        if job[:status] == "Dependency failed" and job[:build_details] then
+          acc << "<details><summary>"
+        end
         acc << "<tt><a href='#{job[:build_url]}'>#{job[:name]}</a></tt>"
+        if job[:status] == "Dependency failed" and job[:build_details] then
+          acc << "</summary>"
+        end
         if job[:status] == "Dependency failed" and job[:build_details] then
           acc << "<ul>"
           job[:build_details][:failed_steps].each do |details|
@@ -63,6 +143,7 @@ module Report::Eval
             acc << "</li>"
           end
           acc << "<ul>"
+          acc << "</details>"
         end
         acc << "</td>"
 

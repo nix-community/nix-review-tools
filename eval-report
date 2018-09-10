@@ -16,6 +16,7 @@ end
 evals = ids.map { |id| [id, Hydra::Eval.get(id, with_build_details: true)] }.to_h
 
 puts Report::Eval.report(evals)
+puts Report::Eval.failure_propagation(evals)
 
 #!nix-shell shell.nix -i ruby
 # vim: set ft=ruby:
