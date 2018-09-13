@@ -18,6 +18,8 @@ ready to be passed to `gist` or `xclip`.
 This parses the output of the pages of hydra, as they contain more data than
 the API does.
 
-> The parsing is sub-optimal in some places, as it initially was a total hack. It
-> will eventually all make use of nokogiri. Not much better, but at least it has
-> some understanding of the DOM.
+It **will cache HTML files to `$PWD`**. This means:
+
+ * Fills your $PWD with stuff.
+ * Does not hit hydra in development.
+ * Be mindful of stale data.
