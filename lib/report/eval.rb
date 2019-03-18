@@ -38,10 +38,14 @@ module Report::Eval
             if step[:status][:type] == "Aborted" then
               "Aborted"
             else
-              step[:status][:links]
-                .first[:url]
-                .split("/build/", 2).last
-                .split("/", 2).first
+              links = step[:status][:links]
+              if links and links.length > 0 then
+                links
+                  .first[:url]
+                  .split("/build/", 2).last
+                  .split("/", 2).first
+              else
+              end
             end
 
           {
