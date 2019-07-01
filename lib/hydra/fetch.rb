@@ -1,15 +1,29 @@
 # Fetches raw resources data.
 # This **does not** parse the data.
 # This means you get HTML for the data.
+
+require "shellwords"
+
 module Hydra::Fetch
   # Gets a resource, given a cache_key it will fetch from cache.
-  def self._get(url, cache_key)
+  def self._get(url, cache_key = nil)
+
+    cmd = [
+      "curl",
+      url
+    ]
+
+    # No cache? no frills.
+    return `#{cmd.shelljoin}` if !cache_key
+
     # FIXME : cache eviction
     # FIXME : better cache location (XDG cache folder)
     filename = cache_key
 
     unless File.exists?(filename)
-      `curl -o "#{filename}" "#{url}"`
+      cmd << "-o"
+      cmd << filename
+      `#{cmd.shelljoin}`
     end
 
     File.read(filename)
