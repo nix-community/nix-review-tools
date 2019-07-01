@@ -44,4 +44,12 @@ module Hydra::Fetch
       "build_#{id}"
     )
   end
+
+  # Gets the jobset summary from hydra.
+  def self.jobset_summary(project, name)
+    # This is never cached.
+    _get(
+      "https://hydra.nixos.org/jobset/#{project}/#{name}"
+    )
+  end
 end

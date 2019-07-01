@@ -15,3 +15,4 @@ require "active_support/core_ext/object/blank"
 require File.join(__dir__(), "hydra/build")
 require File.join(__dir__(), "hydra/eval")
 require File.join(__dir__(), "hydra/fetch")
+require File.join(__dir__(), "hydra/jobset")
