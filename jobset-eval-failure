@@ -8,8 +8,10 @@ require File.join(__dir__(), "lib/md")
 
 abort "Usage: jobset-eval-failure [-f] <id>" unless ARGV[0]
 
+# Options, set by parameters
 $force = false
 
+# Parameters parsing (destructive)
 until ARGV.length == 0 do
   val = ARGV.shift
 
@@ -20,8 +22,23 @@ until ARGV.length == 0 do
   end
 end
 
+# Gets the jobset
 jobset = Hydra::Jobset.get($id)
 
+# Filename to track whether we've seen this eval or not already
+filename = "eval-report-#{jobset.id}@#{jobset.last_evaluation}.md"
+
+# When the file exists, it assumes the report is produced and known.
+if File.exist?(filename) and !$force
+  url = File.read(filename)
+  puts "Job status is already known, skipping\n\nSee #{url}\n"
+  exit 0
+end
+
+# Use this **only** for the generation time.
+now = Time.now.utc.iso8601
+
+# User friendly status
 status = case jobset.status
          when :success
            "succeded"
@@ -33,43 +50,39 @@ status = case jobset.status
            "':jobset.status.to_s'"
          end
 
-filename = "eval-report-#{jobset.id}@#{jobset.last_evaluation}.md"
-
-if File.exist?(filename) and !$force
-  url = File.read(filename)
-  puts "Job status is already known, skipping\n\nSee #{url}\n"
-  exit 0
-end
-
-# Use this **only** for the generation time.
-now = Time.now.utc.iso8601
-
 # Document for the report.
 document = []
 document << MD.title("Jobset #{jobset.id} status for eval @ #{jobset.last_evaluation}")
+
 document << MD.paragraph(MD.italics("Generated at #{now}"))
 document << MD.paragraph("This evaluation #{status}.")
-document << MD.paragraph("(An evaluation is pending since #{jobset.evaluation_pending_since}.)") if jobset.evaluation_pending
+# This is not useful as this information *changes*.
+#document << MD.paragraph("(An evaluation is pending since #{jobset.evaluation_pending_since}.)") if jobset.evaluation_pending
+
+# Section with the error log
 document << MD.subtitle("stderr for eval @ #{jobset.last_evaluation}")
 document << MD.code(jobset.errors_log)
 
+# Create a text document
 text = MD.join(*document)
 
-
+# Prepares a command to output a gist
 gist = [
   "gist",
   "-p",
   "-f", filename,
 ]
 
+# Creates the gist (hopefully)
 out, status = Open3.capture2(*gist, stdin_data: text)
+# FIXME : error condition
 
+# Write the status to stdout
 puts "Generated report:\n"
 puts out
 
+# And mark the jobset eval as seen!
 File.write(filename, out)
-
-
 
 #!nix-shell shell.nix -i ruby
 # vim: set ft=ruby:
