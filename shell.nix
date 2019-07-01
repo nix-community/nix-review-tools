@@ -10,5 +10,6 @@ in mkShell {
     gems
     ruby
     curl
+    gist
   ];
 }
