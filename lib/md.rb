@@ -1,3 +1,7 @@
+# Presents a clean API to build a markdown document.
+# DO NOT assume it will always output text segments.
+# ALWAYS assume you need to `MD.join` the output of the previous bits.
+# This could (probably won't) end up outputting a document tree.
 module MD
   def self.join(*args)
     args.join("\n")
