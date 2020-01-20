@@ -9,7 +9,8 @@ module Hydra::Fetch
     filename = cache_key
 
     unless File.exists?(filename)
-      `curl -o "#{filename}" "#{url}"`
+      STDERR.puts "Downloading #{url}..."
+      `curl -s -o "#{filename}" "#{url}"`
     end
 
     File.read(filename)
