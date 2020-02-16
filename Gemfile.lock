@@ -8,6 +8,7 @@ GEM
       tzinfo (~> 1.1)
       zeitwerk (~> 2.2)
     concurrent-ruby (1.1.6)
+    gist (5.1.0)
     i18n (1.8.2)
       concurrent-ruby (~> 1.0)
     mini_portile2 (2.4.0)
@@ -24,6 +25,7 @@ PLATFORMS
 
 DEPENDENCIES
   activesupport
+  gist
   nokogiri
 
 BUNDLED WITH

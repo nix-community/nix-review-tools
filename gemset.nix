@@ -20,6 +20,16 @@
     };
     version = "1.1.6";
   };
+  gist = {
+    groups = ["default"];
+    platforms = [];
+    source = {
+      remotes = ["https://rubygems.org"];
+      sha256 = "0s69y6hi5iq5k6317j1kjmhi3mk586j1543q8wa608grwcmbq3fw";
+      type = "gem";
+    };
+    version = "5.1.0";
+  };
   i18n = {
     dependencies = ["concurrent-ruby"];
     groups = ["default"];
