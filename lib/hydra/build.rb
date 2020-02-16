@@ -11,6 +11,8 @@ module Hydra::Build
   # FIXME : a more thorough parse.
   def self.get(id)
     document = Nokogiri::HTML(Hydra::Fetch::build(id))
+
+    $stderr.puts "Parsing build_#{id}"
     failed_steps = document
       .css("#generic-tabs")
       .xpath("//*[contains(text(),'Failed build steps')]").first
