@@ -10,6 +10,14 @@ nix-review-tools
 
 * * *
 
+# General usage notes
+
+All commands should already self-handle their deps by relying on a nix-shell shebang.
+
+The dependencies will be installed, and the scripts should start at that point.
+
+* * *
+
 # `eval-report`
 
 Given a list of eval IDs, it will spit out github-flavoured markdown in stdout,
