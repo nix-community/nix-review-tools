@@ -31,3 +31,13 @@ It **will cache HTML files to `$PWD`**. This means:
  * Fills your $PWD with stuff.
  * Does not hit hydra in development.
  * Be mindful of stale data.
+
+
+# `jobset-eval-failure`
+
+Can be run on a timer, it will automatically use `gist` to send a report with
+informatoin about the currently failing jobset eval.
+
+That is, if the jobset eval is failing.
+
+This script is of limited use at large.
