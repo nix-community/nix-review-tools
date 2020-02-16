@@ -10,8 +10,10 @@ module Hydra::Fetch
 
     cmd = [
       "curl",
+      "-s",
       url
     ]
+    STDERR.puts "Downloading #{url}..."
 
     # No cache? no frills.
     return `#{cmd.shelljoin}` if !cache_key
