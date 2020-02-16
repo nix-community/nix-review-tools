@@ -13,7 +13,6 @@ module Hydra::Fetch
       "-s",
       url
     ]
-    STDERR.puts "Downloading #{url}..."
 
     # No cache? no frills.
     return `#{cmd.shelljoin}` if !cache_key
@@ -23,6 +22,7 @@ module Hydra::Fetch
     filename = cache_key
 
     unless File.exists?(filename)
+      STDERR.puts "Downloading #{url}..."
       cmd << "-o"
       cmd << filename
       `#{cmd.shelljoin}`
