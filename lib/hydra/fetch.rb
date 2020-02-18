@@ -26,6 +26,7 @@ module Hydra::Fetch
       cmd << "-o"
       cmd << filename
       `#{cmd.shelljoin}`
+      raise "Error downloading #{url} (#{$?.exitstatus})" unless $?.success?
     end
 
     File.read(filename)
