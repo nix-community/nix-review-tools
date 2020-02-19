@@ -10,7 +10,9 @@ module Hydra::Fetch
 
     cmd = [
       "curl",
-      "-s",
+      "--silent",
+      "--show-error",
+      "--fail",
       url
     ]
 
