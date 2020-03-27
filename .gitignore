@@ -1,2 +1,4 @@
 .bundle
+build_*
+eval_*
 vendor/bundle
