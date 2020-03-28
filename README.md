@@ -4,7 +4,7 @@ nix-review-tools
 <sup>Definitely the most original name I could conceive of</sup>
 
 > This is a WIP repo of tools I use to review stuff for nixos.
-> 
+>
 > This is NOT a definitive project, and parts may split off in
 > other projects, or this project could evolve and be renamed.
 
@@ -36,7 +36,7 @@ It **will cache HTML files to `$PWD`**. This means:
 # `jobset-eval-failure`
 
 Can be run on a timer, it will automatically use `gist` to send a report with
-informatoin about the currently failing jobset eval.
+information about the currently failing jobset eval.
 
 That is, if the jobset eval is failing.
 
