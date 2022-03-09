@@ -34,7 +34,7 @@ module Report::Eval
 
       b[:build_details][:failed_steps]
         .map do |step|
-          build_id = 
+          build_id =
             if step[:status][:type] == "Aborted" then
               "Aborted"
             else
@@ -146,7 +146,7 @@ module Report::Eval
             ].join(" ")
             acc << "</li>"
           end
-          acc << "<ul>"
+          acc << "</ul>"
           acc << "</details>"
         end
         acc << "</td>"
