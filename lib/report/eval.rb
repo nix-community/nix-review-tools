@@ -69,11 +69,15 @@ module Report::Eval
         path = reduce_paths(step[:what])
         md << "<tr>"
         md << "<td>"
-        md << "<details><summary>#{platform} #{path}</summary>"
+        md << if failures.first[:build_id] != "Aborted" then
+          "<details><summary>#{platform} [#{path}](https://hydra.nixos.org/build/#{failures.first[:build_id]})</summary>"
+        else
+          "<details><summary>#{platform} #{path}</summary>"
+        end
         md << "<ul>"
         md.concat (failures.map do |failure|
           propagates_to = failure[:propagates_to]
-            "<li>#{propagates_to[:name]}</li>"
+            "<li>[#{propagates_to[:name]}](#{propagates_to[:build_url]})</li>"
           end
           .uniq)
         md << "</ul>"
